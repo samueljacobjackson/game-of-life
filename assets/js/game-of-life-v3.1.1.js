@@ -23,15 +23,14 @@
 
   var GOL = {
 
-    columns : 0,
-    rows : 0,
-
+    columns : 180,
+    rows : 86,
+    cellSize : 4,
+    
     waitTime: 0,
     generation : 0,
 
     running : false,
-    autoplay : false,
-
 
     // Clear state
     clear : {
@@ -51,101 +50,25 @@
       generation : null,
       steptime : null,
       livecells : null,
-      hint : null,
+      undeadcells : null,
       messages : {
         layout : null
       }
     },
 
     // Initial state
-    initialState : '[{"39":[110]},{"40":[112]},{"41":[109,110,113,114,115]}]',
-
-    // Trail state
-    trail : {
-      current: true,
-      schedule : false
-    },
-
+    initialState : '[]',
 
     // Grid style
-    grid : {
-      current : 0,
-
-      schemes : [
-      {
-        color : '#F3F3F3'
-      },
-
-      {
-        color : '#FFFFFF'
-      },
-
-      {
-        color : '#666666'
-      },
-
-      {
-        color : '' // Special case: 0px grid
-      }
-      ]
-    },
-
-
-    // Zoom level
-    zoom : {
-      current : 0,
-      schedule : false,
-
-      schemes : [
-      // { columns : 100, rows : 48, cellSize : 8 },
-      {
-        columns : 180,
-        rows : 86,
-        cellSize : 4
-      },
-
-      {
-        columns : 300,
-        rows : 144,
-        cellSize : 2
-      },
-
-      {
-        columns : 450,
-        rows : 216,
-        cellSize : 1
-      }
-      ]
-    },
-
+    gridColor : '#F3F3F3',
 
     // Cell colors
-    colors : {
-      current : 0,
-      schedule : false,
-
-      schemes : [
-      {
-        dead : '#FFFFFF',
-        trail : ['#B5ECA2'],
-        alive : ['#9898FF', '#8585FF', '#7272FF', '#5F5FFF', '#4C4CFF', '#3939FF', '#2626FF', '#1313FF', '#0000FF', '#1313FF', '#2626FF', '#3939FF', '#4C4CFF', '#5F5FFF', '#7272FF', '#8585FF']
-      },
-
-      {
-        dead : '#FFFFFF',
-        trail : ['#EE82EE', '#FF0000', '#FF7F00', '#FFFF00', '#008000 ', '#0000FF', '#4B0082'],
-        alive : ['#FF0000', '#FF7F00', '#FFFF00', '#008000 ', '#0000FF', '#4B0082', '#EE82EE']
-      },
-
-      {
-        dead : '#FFFFFF',
-        trail : ['#9898FF', '#8585FF', '#7272FF', '#5F5FFF', '#4C4CFF', '#3939FF', '#2626FF', '#1313FF', '#0000FF', '#1313FF', '#2626FF', '#3939FF', '#4C4CFF', '#5F5FFF', '#7272FF', '#8585FF'],
-        alive : ['#000000']
-      }
-
-      ]
+    colors : 
+    {
+      dead : '#FFFFFF',
+      undead : '#B5B5B5',
+      alive : '#2626FF'
     },
-
 
     /**
          * On Load Event
@@ -153,8 +76,6 @@
     init : function() {
       try {
         this.listLife.init();   // Reset/init algorithm
-        this.loadConfig();      // Load config from URL (autoplay, colors, zoom, ...)
-        this.loadState();       // Load state from URL
         this.keepDOMElements(); // Keep DOM References (getElementsById)
         this.canvas.init();     // Init canvas GUI
         this.registerEvents();  // Register event handlers
@@ -165,82 +86,23 @@
       }
     },
 
-
-    /**
-         * Load config from URL
-         */
-    loadConfig : function() {
-      var colors, grid, zoom;
-
-      this.autoplay = this.helpers.getUrlParameter('autoplay') === '1' ? true : this.autoplay;
-      this.trail.current = this.helpers.getUrlParameter('trail') === '1' ? true : this.trail.current;
-
-      // Initial color config
-      colors = parseInt(this.helpers.getUrlParameter('colors'), 10);
-      if (isNaN(colors) || colors < 1 || colors > GOL.colors.schemes.length) {
-        colors = 1;
-      }
-
-      // Initial grid config
-      grid = parseInt(this.helpers.getUrlParameter('grid'), 10);
-      if (isNaN(grid) || grid < 1 || grid > GOL.grid.schemes.length) {
-        grid = 1;
-      }
-
-      // Initial zoom config
-      zoom = parseInt(this.helpers.getUrlParameter('zoom'), 10);
-      if (isNaN(zoom) || zoom < 1 || zoom > GOL.zoom.schemes.length) {
-        zoom = 1;
-      }
-
-      this.colors.current = colors - 1;
-      this.grid.current = grid - 1;
-      this.zoom.current = zoom - 1;
-
-      this.rows = this.zoom.schemes[this.zoom.current].rows;
-      this.columns = this.zoom.schemes[this.zoom.current].columns;
-    },
-
-
-    /**
-         * Load world state from URL parameter
-         */
-    loadState : function() {
-      var state, i, j, y, s = this.helpers.getUrlParameter('s');
-
-      if ( s === 'random') {
-        this.randomState();
-      } else {
-        if (s == undefined) {
-          s = this.initialState;
-        }
-
-        state = jsonParse(decodeURI(s));
-
-        for (i = 0; i < state.length; i++) {
-          for (y in state[i]) {
-            for (j = 0 ; j < state[i][y].length ; j++) {
-              this.listLife.addCell(state[i][y][j], parseInt(y, 10), this.listLife.actualState);
-            }
-          }
-        }
-      }
-    },
-
-
     /**
      * Create a random pattern
      */
     randomState : function() {
       var i, liveCells = (this.rows * this.columns) * 0.12;
+      var i, undeadCells = (this.rows * this.columns) * 0.02;
 
       for (i = 0; i < liveCells; i++) {
-        this.listLife.addCell(this.helpers.random(0, this.columns - 1), this.helpers.random(0, this.rows - 1), this.listLife.actualState);
+        this.listLife.addLiveCell(this.helpers.random(0, this.columns - 1), this.helpers.random(0, this.rows - 1), this.listLife.actualState);
       }
 
+      for (i = 0; i < undeadCells; i++) {
+        this.listLife.addUndeadCell(this.helpers.random(0, this.columns - 1), this.helpers.random(0, this.rows - 1), this.listLife.actualState);
+      }
+      
       this.listLife.nextGeneration();
     },
-
 
     /**
      * Clean up actual state and prepare a new run
@@ -249,7 +111,6 @@
       this.listLife.init(); // Reset/init algorithm
       this.prepare();
     },
-
 
     /**
      * Prepare DOM elements and Canvas for a new run
@@ -260,17 +121,12 @@
 
       this.element.generation.innerHTML = '0';
       this.element.livecells.innerHTML = '0';
+      this.element.undeadcells.innerHTML = '0';
       this.element.steptime.innerHTML = '0 / 0 (0 / 0)';
 
       this.canvas.clearWorld(); // Reset GUI
       this.canvas.drawWorld(); // Draw State
-
-      if (this.autoplay) { // Next Flow
-        this.autoplay = false;
-        this.handlers.buttons.run();
-      }
     },
-
 
     /**
      * keepDOMElements
@@ -280,10 +136,10 @@
       this.element.generation = document.getElementById('generation');
       this.element.steptime = document.getElementById('steptime');
       this.element.livecells = document.getElementById('livecells');
+      this.element.undeadcells = document.getElementById('undeadcells');
       this.element.messages.layout = document.getElementById('layoutMessages');
       this.element.hint = document.getElementById('hint');
     },
-
 
     /**
      * registerEvents
@@ -298,12 +154,10 @@
       this.helpers.registerEvent(document.getElementById('buttonRun'), 'click', this.handlers.buttons.run, false);
       this.helpers.registerEvent(document.getElementById('buttonStep'), 'click', this.handlers.buttons.step, false);
       this.helpers.registerEvent(document.getElementById('buttonClear'), 'click', this.handlers.buttons.clear, false);
-      this.helpers.registerEvent(document.getElementById('buttonExport'), 'click', this.handlers.buttons.export_, false);
 
       // Layout
-      this.helpers.registerEvent(document.getElementById('buttonTrail'), 'click', this.handlers.buttons.trail, false);
-      this.helpers.registerEvent(document.getElementById('buttonGrid'), 'click', this.handlers.buttons.grid, false);
-      this.helpers.registerEvent(document.getElementById('buttonColors'), 'click', this.handlers.buttons.colors, false);
+      this.helpers.registerEvent(document.getElementById('buttonUndead'), 'click', this.handlers.buttons.undead, false);
+      this.helpers.registerEvent(document.getElementById('buttonLive'), 'click', this.handlers.buttons.live, false);
     },
 
 
@@ -311,13 +165,15 @@
      * Run Next Step
      */
     nextStep : function() {
-      var i, x, y, r, liveCellNumber, algorithmTime, guiTime;
+      var i, x, y, r, cells, liveCellNumber, undeadCellNumber, algorithmTime, guiTime;
 
       // Algorithm run
 
       algorithmTime = (new Date());
 
-      liveCellNumber = GOL.listLife.nextGeneration();
+      cells = GOL.listLife.nextGeneration();
+      liveCellNumber = cells[0];
+      undeadCellNumber = cells[1];
 
       algorithmTime = (new Date()) - algorithmTime;
 
@@ -333,7 +189,7 @@
         if (GOL.listLife.redrawList[i][2] === 1) {
           GOL.canvas.changeCelltoAlive(x, y);
         } else if (GOL.listLife.redrawList[i][2] === 2) {
-          GOL.canvas.keepCellAlive(x, y);
+          GOL.canvas.changeCelltoUndead(x, y);
         } else {
           GOL.canvas.changeCelltoDead(x, y);
         }
@@ -341,30 +197,11 @@
 
       guiTime = (new Date()) - guiTime;
 
-      // Pos-run updates
-
-      // Clear Trail
-      if (GOL.trail.schedule) {
-        GOL.trail.schedule = false;
-        GOL.canvas.drawWorld();
-      }
-
-      // Change Grid
-      if (GOL.grid.schedule) {
-        GOL.grid.schedule = false;
-        GOL.canvas.drawWorld();
-      }
-
-      // Change Colors
-      if (GOL.colors.schedule) {
-        GOL.colors.schedule = false;
-        GOL.canvas.drawWorld();
-      }
-
       // Running Information
       GOL.generation++;
       GOL.element.generation.innerHTML = GOL.generation;
       GOL.element.livecells.innerHTML = liveCellNumber;
+      GOL.element.undeadcells.innerHTML = undeadCellNumber;
 
       r = 1.0/GOL.generation;
       GOL.times.algorithm = (GOL.times.algorithm * (1 - r)) + (algorithmTime * r);
@@ -376,12 +213,6 @@
         stats.begin();
         window.requestAnimationFrame(GOL.nextStep);
         stats.end();
-        // TODO honour a waitTime ?
-        //setTimeout(function() {
-        //  stats.begin();
-        //  GOL.nextStep();
-        //  stats.end();
-        //}, GOL.waitTime);
       } else {
         if (GOL.clear.schedule) {
           GOL.cleanUp();
@@ -493,88 +324,9 @@
           } else {
             GOL.cleanUp();
           }
-        },
-
-
-        /**
-         * Button Handler - Remove/Add Trail
-         */
-        trail : function() {
-          GOL.element.messages.layout.innerHTML = GOL.trail.current ? 'Trail is Off' : 'Trail is On';
-          GOL.trail.current = !GOL.trail.current;
-          if (GOL.running) {
-            GOL.trail.schedule = true;
-          } else {
-            GOL.canvas.drawWorld();
-          }
-        },
-
-
-        /**
-         *
-         */
-        colors : function() {
-          GOL.colors.current = (GOL.colors.current + 1) % GOL.colors.schemes.length;
-          GOL.element.messages.layout.innerHTML = 'Color Scheme #' + (GOL.colors.current + 1);
-          if (GOL.running) {
-            GOL.colors.schedule = true; // Delay redraw
-          } else {
-            GOL.canvas.drawWorld(); // Force complete redraw
-          }
-        },
-
-
-        /**
-         *
-         */
-        grid : function() {
-          GOL.grid.current = (GOL.grid.current + 1) % GOL.grid.schemes.length;
-          GOL.element.messages.layout.innerHTML = 'Grid Scheme #' + (GOL.grid.current + 1);
-          if (GOL.running) {
-            GOL.grid.schedule = true; // Delay redraw
-          } else {
-            GOL.canvas.drawWorld(); // Force complete redraw
-          }
-        },
-
-
-        /**
-         * Button Handler - Export State
-         */
-        export_ : function() {
-          var i, j, url = '', cellState = '', params = '';
-
-          for (i = 0; i < GOL.listLife.actualState.length; i++) {
-            cellState += '{"'+GOL.listLife.actualState[i][0]+'":[';
-            //cellState += '{"one":[';
-            for (j = 1; j < GOL.listLife.actualState[i].length; j++) {
-              cellState += GOL.listLife.actualState[i][j]+',';
-            }
-            cellState = cellState.substring(0, cellState.length - 1) + ']},';
-          }
-
-          cellState = cellState.substring(0, cellState.length - 1) + '';
-
-          if (cellState.length !== 0) {
-            url = (window.location.href.indexOf('?') === -1) ? window.location.href : window.location.href.slice(0, window.location.href.indexOf('?'));
-
-            params = '?autoplay=0' +
-            '&trail=' + (GOL.trail.current ? '1' : '0') +
-            '&grid=' + (GOL.grid.current + 1) +
-            '&colors=' + (GOL.colors.current + 1) +
-            '&zoom=' + (GOL.zoom.current + 1) +
-            '&s=['+ cellState +']';
-
-            document.getElementById('exportUrlLink').href = params;
-            document.getElementById('exportTinyUrlLink').href = 'http://tinyurl.com/api-create.php?url='+ url + params;
-            document.getElementById('exportUrl').style.display = 'inline';
-          }
-        }
-
+        }, 
       }
-
     },
-
 
     /** ****************************************************************************************************************************
      *
@@ -662,25 +414,6 @@
         }
       },
 
-
-      /**
-       * setNoGridOn
-       */
-      setNoGridOn : function() {
-        this.cellSize = GOL.zoom.schemes[GOL.zoom.current].cellSize + 1;
-        this.cellSpace = 0;
-      },
-
-
-      /**
-       * setNoGridOff
-       */
-      setNoGridOff : function() {
-        this.cellSize = GOL.zoom.schemes[GOL.zoom.current].cellSize;
-        this.cellSpace = 1;
-      },
-
-
       /**
        * drawCell
        */
@@ -708,48 +441,32 @@
        * switchCell
        */
       switchCell : function(i, j) {
-        if(GOL.listLife.isAlive(i, j)) {
+        if(state = GOL.listLife.isAliveOrUndead(i, j)){
+          this.changeCelltoAlive(i, j, state);
+          GOL.listLife.addCell(i, j, state, GOL.listLife.actualState);
+        }else {
           this.changeCelltoDead(i, j);
           GOL.listLife.removeCell(i, j, GOL.listLife.actualState);
-        }else {
-          this.changeCelltoAlive(i, j);
-          GOL.listLife.addCell(i, j, GOL.listLife.actualState);
         }
       },
 
-
-      /**
-       * keepCellAlive
-       */
-      keepCellAlive : function(i, j) {
+      changeCelltoUndead : function(i, j) {
         if (i >= 0 && i < GOL.columns && j >=0 && j < GOL.rows) {
-          this.age[i][j]++;
-          this.drawCell(i, j, true);
+          this.drawCell(i, j, 2);
         }
       },
 
-
-      /**
-       * changeCelltoAlive
-       */
       changeCelltoAlive : function(i, j) {
         if (i >= 0 && i < GOL.columns && j >=0 && j < GOL.rows) {
-          this.age[i][j] = 1;
-          this.drawCell(i, j, true);
+          this.drawCell(i, j, 1);
         }
       },
 
-
-      /**
-       * changeCelltoDead
-       */
       changeCelltoDead : function(i, j) {
         if (i >= 0 && i < GOL.columns && j >=0 && j < GOL.rows) {
-          this.age[i][j] = -this.age[i][j]; // Keep trail
-          this.drawCell(i, j, false);
+          this.drawCell(i, j, 0);
         }
       }
-
     },
 
 
@@ -761,7 +478,6 @@
       actualState : [],
       redrawList : [],
 
-
       /**
        *
        */
@@ -769,38 +485,8 @@
         this.actualState = [];
       },
 
-
-      /**
-       *
-	NOTE: The following code is slower than the used one.
-
-	(...)
-
-	if (allDeadNeighbours[key] === undefined) {
-	  allDeadNeighbours[key] = {
-			x: deadNeighbours[m][0],
-			y: deadNeighbours[m][1],
-			i: 1
-		};
-	} else {
-	  allDeadNeighbours[key].i++;
-	}
-
-	(...)
-
-	// Process dead neighbours
-	for (key in allDeadNeighbours) {
-
-	  if (allDeadNeighbours[key].i === 3) { // Add new Cell
-
-		this.addCell(allDeadNeighbours[key].x, allDeadNeighbours[key].y, newState);
-		alive++;
-		this.redrawList.push([allDeadNeighbours[key].x, allDeadNeighbours[key].y, 1]);
-	  }
-	}
-	*/
       nextGeneration : function() {
-        var x, y, i, j, m, n, key, t1, t2, alive = 0, neighbours, deadNeighbours, allDeadNeighbours = {}, newState = [];
+        var x, y, i, j, m, n, key, t1, t2, undead= 0; alive = 0, neighbours, deadNeighbours, allDeadNeighbours = {}, newState = [];
         this.redrawList = [];
 
         for (i = 0; i < this.actualState.length; i++) {
@@ -810,12 +496,22 @@
           for (j = 1; j < this.actualState[i].length; j++) {
             x = this.actualState[i][j];
             y = this.actualState[i][0];
+            isUndead = this.actualState[i][j][0];
+
+            if(isUndead){
+              this.addCell(x, y, newState, true);
+              this.redrawList.push([x, y, 2]); // infect cell
+              undead++; 
+              continue;
+            }
 
             // Possible dead neighbours
             deadNeighbours = [[x-1, y-1, 1], [x, y-1, 1], [x+1, y-1, 1], [x-1, y, 1], [x+1, y, 1], [x-1, y+1, 1], [x, y+1, 1], [x+1, y+1, 1]];
 
             // Get number of live neighbours and remove alive neighbours from deadNeighbours
             neighbours = this.getNeighboursFromAlive(x, y, i, deadNeighbours);
+            livingNeighbours = neighbours[0];
+            undeadNeighbours = neighbours[1];
 
             // Join dead neighbours to check list
             for (m = 0; m < 8; m++) {
@@ -830,10 +526,17 @@
               }
             }
 
-            if (!(neighbours === 0 || neighbours === 1 || neighbours > 3)) {
-              this.addCell(x, y, newState);
+            if(undeadNeighbours > 0){
+              this.addCell(x, y, newState, true);
+              this.redrawList.push([x, y, 2]); // infect cell
+              undead++;
+              continue;
+            }
+
+            if (!(livingNeighbours === 0 || livingNeighbours === 1 || livingNeighbours > 3)) {
+              this.addCell(x, y, newState, false);
               alive++;
-              this.redrawList.push([x, y, 2]); // Keep alive
+              this.redrawList.push([x, y, 1]); // Keep alive
             } else {
               this.redrawList.push([x, y, 0]); // Kill cell
             }
@@ -852,40 +555,44 @@
             this.redrawList.push([t1, t2, 1]);
           }
         }
-
         this.actualState = newState;
-
         return alive;
       },
-
 
       topPointer : 1,
       middlePointer : 1,
       bottomPointer : 1,
 
-      /**
-             *
-             */
       getNeighboursFromAlive : function (x, y, i, possibleNeighboursList) {
-        var neighbours = 0, k;
+        var living = 0, undead = 0, k;
 
         // Top
         if (this.actualState[i-1] !== undefined) {
           if (this.actualState[i-1][0] === (y - 1)) {
             for (k = this.topPointer; k < this.actualState[i-1].length; k++) {
-
+            
               if (this.actualState[i-1][k] >= (x-1) ) {
 
                 if (this.actualState[i-1][k] === (x - 1)) {
                   possibleNeighboursList[0] = undefined;
                   this.topPointer = k + 1;
-                  neighbours++;
+
+                  if(this.actualState[i-1][k][0]){
+                    undead++;
+                  }else{
+                    living++;
+                  }
                 }
 
                 if (this.actualState[i-1][k] === x) {
                   possibleNeighboursList[1] = undefined;
                   this.topPointer = k;
-                  neighbours++;
+                
+                  if(this.actualState[i-1][k][0]){
+                    undead++;
+                  }else{
+                    living++;
+                  }
                 }
 
                 if (this.actualState[i-1][k] === (x + 1)) {
@@ -897,6 +604,11 @@
                     this.topPointer = k - 1;
                   }
 
+                  if(this.actualState[i-1][k][0]){
+                    undead++;
+                  }else{
+                    living++;
+                  }
                   neighbours++;
                 }
 
@@ -914,12 +626,22 @@
 
             if (this.actualState[i][k] === (x - 1)) {
               possibleNeighboursList[3] = undefined;
-              neighbours++;
+            
+              if(this.actualState[i][k][0]){
+                undead++;
+              }else{
+                living++;
+              }
             }
 
             if (this.actualState[i][k] === (x + 1)) {
               possibleNeighboursList[4] = undefined;
-              neighbours++;
+            
+              if(this.actualState[i][k][0]){
+                undead++;
+              }else{
+                living++;
+              }
             }
 
             if (this.actualState[i][k] > (x + 1)) {
@@ -937,13 +659,23 @@
                 if (this.actualState[i+1][k] === (x - 1)) {
                   possibleNeighboursList[5] = undefined;
                   this.bottomPointer = k + 1;
-                  neighbours++;
+            
+                  if(this.actualState[i+1][k][0]){
+                    undead++;
+                  }else{
+                    living++;
+                  }
                 }
 
                 if (this.actualState[i+1][k] === x) {
                   possibleNeighboursList[6] = undefined;
                   this.bottomPointer = k;
-                  neighbours++;
+                
+                  if(this.actualState[i+1][k][0]){
+                    undead++;
+                  }else{
+                    living++;
+                  }
                 }
 
                 if (this.actualState[i+1][k] === (x + 1)) {
@@ -955,7 +687,11 @@
                     this.bottomPointer = k - 1;
                   }
 
-                  neighbours++;
+                  if(this.actualState[i+1][k][0]){
+                    undead++;
+                  }else{
+                    living++;
+                  }
                 }
 
                 if (this.actualState[i+1][k] > (x + 1)) {
@@ -965,17 +701,15 @@
             }
           }
         }
-
-        return neighbours;
+        return [living, undead];
       },
 
 
       /**
        *
        */
-      isAlive : function(x, y) {
+      isAliveOrUndead : function(x, y) {
         var i, j;
-
         for (i = 0; i < this.actualState.length; i++) {
           if (this.actualState[i][0] === y) {
             for (j = 1; j < this.actualState[i].length; j++) {
@@ -987,7 +721,6 @@
         }
         return false;
       },
-
 
       /**
        *
@@ -1015,16 +748,16 @@
       /**
        *
        */
-      addCell : function(x, y, state) {
+      addCell : function(x, y, state, undead) {
         if (state.length === 0) {
-          state.push([y, x]);
+          state.push([y, x, undead]);
           return;
         }
 
         var k, n, m, tempRow, newState = [], added;
 
         if (y < state[0][0]) { // Add to Head
-          newState = [[y,x]];
+          newState = [[y,x, undead]];
           for (k = 0; k < state.length; k++) {
             newState[k+1] = state[k];
           }
@@ -1036,7 +769,7 @@
           return;
 
         } else if (y > state[state.length - 1][0]) { // Add to Tail
-          state[state.length] = [y, x];
+          state[state.length] = [y, x, undead];
           return;
 
         } else { // Add to Middle
@@ -1047,14 +780,14 @@
               added = false;
               for (m = 1; m < state[n].length; m++) {
                 if ((!added) && (x < state[n][m])) {
-                  tempRow.push(x);
+                  tempRow.push([x, undead]);
                   added = !added;
                 }
                 tempRow.push(state[n][m]);
               }
               tempRow.unshift(y);
               if (!added) {
-                tempRow.push(x);
+                tempRow.push([x, undead]);
               }
               state[n] = tempRow;
               return;
@@ -1064,7 +797,7 @@
               newState = [];
               for (k = 0; k < state.length; k++) {
                 if (k === n) {
-                  newState[k] = [y,x];
+                  newState[k] = [y,x,undead];
                   newState[k+1] = state[k];
                 } else if (k < n) {
                   newState[k] = state[k];
