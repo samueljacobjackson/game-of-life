@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html>
   <head>
+    
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+      
     <script src="assets/js/json-sans-eval.js"></script>
     <script src="assets/js/css-browser-selector.js"></script>
     <script src="assets/js/stats.min.js"></script>
-    <script src="assets/js/game-of-life-v3.1.1.js"></script>
 
-    <link rel="stylesheet" type="text/css" href="assets/css/style.css" />
-    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
-
+    <link rel="stylesheet" type="text/css" href="assets/css/style.css" />    
+    <script src="assets/js/app.js"></script>
+    
     <title>Conway's Game of Life - Zombie Apocalypse</title>
   </head>
   <body>
     <div id="wrapper">
 
       <div id="title">
-        <a href=".">Conway's Game of Life - Zombie Apocalypse</a>
+        <div class="title">Conway's Game of Life</div>
+        <div class="title">Zombie Apocalypse Version</div>
       </div>
 
       <canvas id="canvas" width="901" height="433"></canvas>
@@ -40,28 +43,19 @@
         <form action="">
           <input type="button" value="Living" id="buttonAlive" title="Key: L" />
           <input type="button" value="Undead" id="buttonUndead" title="Key: U" />
+          <input type="button" value="Random" id="buttonRandom" />
         </form>
       </div>
 
       <div class="box patterns">
         <div class="subtitle">What is this?</div>
-        This page contains a Javascript implementation of the well know John Conway's Game of Life. It uses the <a href="http://dotat.at/prog/life/life.html" title="Tony Finch's List Life Algorithm">List Life</a> algorithm (by Tony Finch) and a Canvas interface for drawing.
+          This page contains a fork of <a href="https://github.com/pmav" title="https://github.com/pmav" >Pedro Verruma's</a> code for Conways Game of Life.
+          It uses the <a href="http://dotat.at/prog/life/life.html" title="Tony Finch's List Life Algorithm">List Life</a> algorithm (by Tony Finch) and a Canvas interface for drawing.
         <br /><br />
-        This is a work in progress and I will add some new features in the near future:
-        <ul>
-          <li>Zoom controls</li>
-          <li>Canvas navigation controls</li>
-          <li>More patterns</li>
-          <li>Proper benchmark support</li>
-          <li>...</li>
-        </ul>
 
-        <h4>Previous versions</h4>
-        <ul>
-          <li>1.0.0 - First public release. It uses the simplest algorithm possible and a table for drawing. Online here: <a href="http://pmav.eu/stuff/javascript-game-of-life-v1.0/" title="Javascript Conway's Game of Life 1.0.0">pmav.eu</a>.</li>
-          <li>2.0.0 - Private release, first implementation of the List Life algorithm.</li>
-          <li>3.1.1 - Current version, List Life and Canvas.</li>
-        </ul>
+        <h4>Pedro Verruma's Version</h4>
+        Visit the page tis was based upon online at <a href="http://pmav.eu/stuff/javascript-game-of-life-v3.1.1/">http://pmav.eu/stuff/javascript-game-of-life-v3.1.1/</a>
+
 
         <h4>License</h4>
         This work is licenced under a <a rel="license" href="LICENSE.md">MIT license</a> (except any 3rd party code).
@@ -88,10 +82,10 @@
       </div>
 
       <div id="footer">
-        Conway's Game of Life (B3/S23) v3.1.1 | <a href="http://pmav.eu">pmav.eu</a> | HTML 5 | 2008-2010
+        Conway's Game of Life Zombie Apocalypse
       </div>
-    </div>
 
-    <a href="https://github.com/pmav/game-of-life"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+      <a href="https://github.com/samueljacobjackson/game-of-life"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+    </div>
   </body>
 </html>
